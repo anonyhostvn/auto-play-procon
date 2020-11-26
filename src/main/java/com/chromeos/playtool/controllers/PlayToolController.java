@@ -3,6 +3,8 @@ package com.chromeos.playtool.controllers;
 import com.chromeos.playtool.domain.GeneralResponse;
 import com.chromeos.playtool.domain.ResponseFactory;
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
+import com.chromeos.playtool.models.response.GetAllGameResponse;
+import com.chromeos.playtool.models.response.GetRecentTokenRequest;
 import com.chromeos.playtool.models.response.SetCurrentGameResponse;
 import com.chromeos.playtool.models.response.SetTokenPlayToolResponse;
 import com.chromeos.playtool.service.IPlayToolService;
@@ -36,6 +38,16 @@ public class PlayToolController {
         @RequestParam(name = "match-id") Long matchId
     ) {
         return ResponseFactory.success(iPlayToolService.setCurrentGame(matchId));
+    }
+
+    @GetMapping("/get-token")
+    public ResponseEntity<GeneralResponse<GetRecentTokenRequest>> getRecentToken() {
+        return ResponseFactory.success(iPlayToolService.getRecentToken());
+    }
+
+    @GetMapping("/get-all-game")
+    public ResponseEntity<GeneralResponse<GetAllGameResponse>> getAllGame() {
+        return ResponseFactory.success(iPlayToolService.getAllGame());
     }
 
 }
