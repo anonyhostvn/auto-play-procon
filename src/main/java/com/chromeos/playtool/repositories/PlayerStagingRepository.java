@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Getter
@@ -17,13 +18,19 @@ public class PlayerStagingRepository {
 
     private List<GameInfo> gameInfoList;
 
-    private GameInfo recentGameInfo;
+    private GameInfo currentGameInfo;
 
     private MapState recentMapState;
 
     public PlayerStagingRepository() {
         this.token = null;
         gameInfoList = null;
+    }
+
+    public GameInfo findFirstGameInfoByMatchId(Long matchId) {
+        for (GameInfo gameInfo : gameInfoList)
+            if (Objects.equals(matchId, gameInfo.getId())) return gameInfo;
+        return null;
     }
 
 }

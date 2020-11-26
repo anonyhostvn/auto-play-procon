@@ -3,6 +3,7 @@ package com.chromeos.playtool.controllers;
 import com.chromeos.playtool.domain.GeneralResponse;
 import com.chromeos.playtool.domain.ResponseFactory;
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
+import com.chromeos.playtool.models.response.SetCurrentGameResponse;
 import com.chromeos.playtool.models.response.SetTokenPlayToolResponse;
 import com.chromeos.playtool.service.IPlayToolService;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,13 @@ public class PlayToolController {
             @RequestBody SetTokenPlayToolRequest setTokenPlayToolRequest
     ) {
         return ResponseFactory.success(iPlayToolService.setNewToken(setTokenPlayToolRequest));
+    }
+
+    @GetMapping("/set-current-game")
+    public ResponseEntity<GeneralResponse<SetCurrentGameResponse>> setCurrentGame(
+        @RequestParam(name = "match-id") Long matchId
+    ) {
+        return ResponseFactory.success(iPlayToolService.setCurrentGame(matchId));
     }
 
 }

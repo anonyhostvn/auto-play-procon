@@ -5,15 +5,15 @@ import lombok.Data;
 @Data
 public class GameInfo {
 
-    private Integer id;
+    private Long id;
 
-    private Integer intervalMillis;
+    private Long intervalMillis;
 
     private String matchTo;
 
     private Integer teamID;
 
-    private Integer turnMillis;
+    private Long turnMillis;
 
     private Integer turns;
 }
