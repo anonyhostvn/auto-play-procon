@@ -3,10 +3,7 @@ package com.chromeos.playtool.controllers;
 import com.chromeos.playtool.domain.GeneralResponse;
 import com.chromeos.playtool.domain.ResponseFactory;
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
-import com.chromeos.playtool.models.response.GetAllGameResponse;
-import com.chromeos.playtool.models.response.GetRecentTokenRequest;
-import com.chromeos.playtool.models.response.SetCurrentGameResponse;
-import com.chromeos.playtool.models.response.SetTokenPlayToolResponse;
+import com.chromeos.playtool.models.response.*;
 import com.chromeos.playtool.service.IPlayToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +32,7 @@ public class PlayToolController {
 
     @GetMapping("/set-current-game")
     public ResponseEntity<GeneralResponse<SetCurrentGameResponse>> setCurrentGame(
-        @RequestParam(name = "match-id") Long matchId
+        @RequestParam(name = "matchId") Long matchId
     ) {
         return ResponseFactory.success(iPlayToolService.setCurrentGame(matchId));
     }
@@ -48,6 +45,11 @@ public class PlayToolController {
     @GetMapping("/get-all-game")
     public ResponseEntity<GeneralResponse<GetAllGameResponse>> getAllGame() {
         return ResponseFactory.success(iPlayToolService.getAllGame());
+    }
+
+    @GetMapping("/update-state")
+    public ResponseEntity<GeneralResponse<UpdateGameStateResponse>> updateGameState() {
+        return ResponseFactory.success(iPlayToolService.updateGameState());
     }
 
 }

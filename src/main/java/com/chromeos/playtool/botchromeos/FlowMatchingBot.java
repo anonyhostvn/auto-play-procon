@@ -96,7 +96,7 @@ public class FlowMatchingBot implements IBotChromeOS {
                 if (team.getTeamID().equals(teamId))
                     gapBefore += 10 * team.getTilePoint() + team.getAreaPoint();
                 else {
-                    opponentTeamId = team.getTeamID();
+                    opponentTeamId = team.getTeamID().intValue();
                     gapBefore -= 10 * team.getTilePoint() + team.getAreaPoint();
                 }
             // Calculate gap point

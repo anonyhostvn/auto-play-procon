@@ -1,10 +1,7 @@
 package com.chromeos.playtool.service;
 
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
-import com.chromeos.playtool.models.response.GetAllGameResponse;
-import com.chromeos.playtool.models.response.GetRecentTokenRequest;
-import com.chromeos.playtool.models.response.SetCurrentGameResponse;
-import com.chromeos.playtool.models.response.SetTokenPlayToolResponse;
+import com.chromeos.playtool.models.response.*;
 
 public interface IPlayToolService {
 
@@ -15,4 +12,6 @@ public interface IPlayToolService {
     GetRecentTokenRequest getRecentToken();
 
     GetAllGameResponse getAllGame();
+
+    UpdateGameStateResponse updateGameState();
 }

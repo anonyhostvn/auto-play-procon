@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 public class Team implements Serializable {
 
-    private Integer teamID;
+    private Long teamID;
 
     private List<Agent> agents;
 

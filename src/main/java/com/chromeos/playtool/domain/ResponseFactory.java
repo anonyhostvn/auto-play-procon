@@ -14,6 +14,7 @@ public class ResponseFactory {
         responseStatus.setCode(ResponseStatusMsg.SUCCESS.getCode());
         responseStatus.setMessage(ResponseStatusMsg.SUCCESS.getMsg());
         generalResponse.setData(data);
+        generalResponse.setStatus(responseStatus);
         return ResponseEntity.ok(generalResponse);
     }
 

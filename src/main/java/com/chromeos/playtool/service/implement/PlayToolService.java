@@ -6,10 +6,7 @@ import com.chromeos.playtool.constant.ResponseStatusMsg;
 import com.chromeos.playtool.exception.BusinessLogicException;
 import com.chromeos.playtool.hostserver.IHostServerClient;
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
-import com.chromeos.playtool.models.response.GetAllGameResponse;
-import com.chromeos.playtool.models.response.GetRecentTokenRequest;
-import com.chromeos.playtool.models.response.SetCurrentGameResponse;
-import com.chromeos.playtool.models.response.SetTokenPlayToolResponse;
+import com.chromeos.playtool.models.response.*;
 import com.chromeos.playtool.repositories.PlayerStagingRepository;
 import com.chromeos.playtool.service.IPlayToolService;
 import lombok.extern.slf4j.Slf4j;
@@ -85,10 +82,21 @@ public class PlayToolService implements IPlayToolService {
         log.info("Set current game info successfully");
         playerStagingRepository.setCurrentGameInfo(gameInfo);
 
-        MapState currentMapState = iHostServerClient.getRecentMapState(
-                gameInfo.getId().toString(),
-                playerStagingRepository.getToken()
+        MapState currentMapState = null;
+        try {
+            currentMapState = iHostServerClient.getRecentMapState(
+                    playerStagingRepository.getToken(),
+                    gameInfo.getId().toString()
+            );
+            log.info("Get current map state from server successfully");
+        } catch (Exception e) {
+            log.info("Get current map state from server failed");
+        }
+        if (currentMapState == null) throw new BusinessLogicException(
+                ResponseStatusMsg.GET_MAP_STATE_FAILED.getCode(),
+                ResponseStatusMsg.GET_MAP_STATE_FAILED.getMsg()
         );
+
         playerStagingRepository.setRecentMapState(currentMapState);
 
         SetCurrentGameResponse setCurrentGameResponse = new SetCurrentGameResponse();
@@ -131,6 +139,49 @@ public class PlayToolService implements IPlayToolService {
         GetAllGameResponse getAllGameResponse = new GetAllGameResponse();
         getAllGameResponse.setListGame(gameInfoList);
         return getAllGameResponse;
+    }
+
+    @Override
+    public UpdateGameStateResponse updateGameState() {
+
+        log.info("Start update game state");
+
+        String token = playerStagingRepository.getToken();
+
+        if (token == null || StringUtils.isEmpty(token)) {
+            log.info("Token is null");
+            throw new BusinessLogicException(
+                    ResponseStatusMsg.NOT_FOUND_TOKEN.getCode(),
+                    ResponseStatusMsg.NOT_FOUND_TOKEN.getMsg()
+            );
+        }
+
+        GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
+
+        if (gameInfo == null) {
+            log.info("Recent game info is null");
+            throw new BusinessLogicException(
+                    ResponseStatusMsg.GAME_INFO_NOT_FOUND.getCode(),
+                    ResponseStatusMsg.GAME_INFO_NOT_FOUND.getMsg()
+            );
+        }
+
+        MapState mapState = iHostServerClient.getRecentMapState(token, gameInfo.getId().toString());
+
+        if (mapState == null) {
+            log.info("Get mapState failed");
+            throw new BusinessLogicException(
+                    ResponseStatusMsg.GET_MAP_STATE_FAILED.getCode(),
+                    ResponseStatusMsg.GET_MAP_STATE_FAILED.getMsg()
+            );
+        }
+
+        playerStagingRepository.setRecentMapState(mapState);
+
+        UpdateGameStateResponse updateGameStateResponse = new UpdateGameStateResponse();
+        updateGameStateResponse.setCurrentMapState(mapState);
+
+        return updateGameStateResponse;
     }
 
 }
