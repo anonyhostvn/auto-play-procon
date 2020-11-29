@@ -75,7 +75,9 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
     private void playBot(IBotChromeOS iBotChromeOS, String token) {
         GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
+        Long t1 = System.currentTimeMillis();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
+        Long gapTimeForRequest = System.currentTimeMillis() - t1;
 
 //        CompletableFuture.runAsync(() -> {
 //            RequestActionList flowMatchingBotDecision = iBotChromeOS.botMakeDecision(mapState, gameInfo);
@@ -95,7 +97,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //        Long currentUnixTime = Instant.now().toEpochMilli();
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
         Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 1000;
-        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn -100;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn -1100;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
