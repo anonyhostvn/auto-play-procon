@@ -57,6 +57,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         log.info("Start fetch mapState");
         try {
             mapState = iHostServerClient.getRecentMapState(token, matchId);
+            log.info("Recent turn get from server: {}", mapState.getTurn());
         } catch (Exception e) {
             log.info(e.getMessage(), e.getCause());
         }
@@ -72,65 +73,42 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         return mapState;
     }
 
-    private void playBot(IBotChromeOS iBotChromeOS, String token, GameInfo gameInfo) {
-
+    private void playBot(IBotChromeOS iBotChromeOS, String token) {
+        GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
 
-        RequestActionList flowMatchingBotDecision = iBotChromeOS.botMakeDecision(mapState, gameInfo);
+        Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
+        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 1000;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn -100;
+        log.info("Delayed time between next action: {}", delayedTime);
+        log.info("Remain time in turn: {}", remainTime);
+        log.info("Set async action");
+        log.info(" ================ ");
 
-        try {
-            iHostServerClient.sendActionToServer(
-                    token,
-                    gameInfo.getId().toString(),
-                    flowMatchingBotDecision
-            );
-        } catch (Exception e) {
-            log.info("[flowMatchingBotDecision] Send action failed");
-        }
+        CompletableFuture.runAsync(() -> {
+            log.info("Send action");
+        }, CompletableFuture.delayedExecutor(
+                remainTime,
+                TimeUnit.MILLISECONDS
+        ));
+        CompletableFuture<EmptyResponseData> future = new CompletableFuture<>();
+        future.completeAsync(
+                () -> {
+                    playBot(iBotChromeOS, token);
+                    return new EmptyResponseData();
+                },
+                CompletableFuture.delayedExecutor(
+                        delayedTime,
+                        TimeUnit.MILLISECONDS
+                )
+        );
+        listWaiting.add(future);
     }
 
     @Override
     public void startASchedulePlaying() {
-        GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
         String token = playerStagingRepository.getToken();
-
-        if (gameInfo == null)
-            throw new BusinessLogicException(
-                    ResponseStatusMsg.GAME_INFO_NOT_FOUND.getCode(),
-                    ResponseStatusMsg.GAME_INFO_NOT_FOUND.getMsg()
-            );
-
-        MapState mapState = fetchMapState(token, gameInfo.getId().toString());
-        Long currentUnixTime = Instant.now().toEpochMilli();
-        Long startUnixTime = mapState.getStartedAtUnixTime();
-        Long totalTimePerTurn = gameInfo.getTurnMillis() + gameInfo.getIntervalMillis();
-//        Long remainTimeInRecentTurn = (currentUnixTime - startUnixTime) % (gameInfo.getTurnMillis() + gameInfo.getIntervalMillis());
-        Long recentTurn = (currentUnixTime - startUnixTime) / totalTimePerTurn ;
-        log.info("recentTurn: {}", recentTurn);
-        log.info("recentTurn double: {}", ((double) currentUnixTime - startUnixTime) / totalTimePerTurn);
-
-
-        playBot(flowMatchingBot, token, gameInfo);
-        long epsilon = 200L;
-
-        for (long i = recentTurn + 1; i < gameInfo.getTurns(); i++) {
-            Long currentTurn = i;
-            Long startTurnTime = startUnixTime + i * totalTimePerTurn;
-            CompletableFuture<EmptyResponseData> future = new CompletableFuture<>();
-            epsilon += 80;
-            future.completeAsync(
-                    () -> {
-                        playBot(flowMatchingBot, token, gameInfo);
-                        log.info("[Schedule] Send action for turn: {}", currentTurn);
-                        return new EmptyResponseData();
-                    },
-                    CompletableFuture.delayedExecutor(
-                            startTurnTime - currentUnixTime + epsilon,
-                            TimeUnit.MILLISECONDS
-                    )
-            );
-            listWaiting.add(future);
-        }
+        playBot(flowMatchingBot, token);
     }
 
     @Override
