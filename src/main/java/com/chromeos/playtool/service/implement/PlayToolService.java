@@ -8,6 +8,7 @@ import com.chromeos.playtool.hostserver.IHostServerClient;
 import com.chromeos.playtool.models.request.SetTokenPlayToolRequest;
 import com.chromeos.playtool.models.response.*;
 import com.chromeos.playtool.repositories.PlayerStagingRepository;
+import com.chromeos.playtool.scheduleplay.ISchedulePlayingService;
 import com.chromeos.playtool.service.IPlayToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -25,10 +27,17 @@ public class PlayToolService implements IPlayToolService {
 
     private final IHostServerClient iHostServerClient;
 
+    private final ISchedulePlayingService iSchedulePlayingService;
+
     @Autowired
-    public PlayToolService(PlayerStagingRepository playerStagingRepository, IHostServerClient iHostServerClient) {
+    public PlayToolService(
+            PlayerStagingRepository playerStagingRepository,
+            IHostServerClient iHostServerClient,
+            ISchedulePlayingService iSchedulePlayingService
+    ) {
         this.playerStagingRepository = playerStagingRepository;
         this.iHostServerClient = iHostServerClient;
+        this.iSchedulePlayingService = iSchedulePlayingService;
     }
 
     @Override
@@ -101,6 +110,11 @@ public class PlayToolService implements IPlayToolService {
 
         SetCurrentGameResponse setCurrentGameResponse = new SetCurrentGameResponse();
         setCurrentGameResponse.setCurrentMapState(currentMapState);
+
+        CompletableFuture.runAsync(() -> {
+            iSchedulePlayingService.stopAllSchedulePlaying();
+            iSchedulePlayingService.startASchedulePlaying();
+        });
 
         return setCurrentGameResponse;
     }
