@@ -77,6 +77,22 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
 
+//        CompletableFuture.runAsync(() -> {
+//            RequestActionList flowMatchingBotDecision = iBotChromeOS.botMakeDecision(mapState, gameInfo);
+//            try {
+//                iHostServerClient.sendActionToServer(
+//                        token,
+//                        gameInfo.getId().toString(),
+//                        flowMatchingBotDecision
+//                );
+//                log.info("Send action for turn: {}", mapState.getTurn());
+//            } catch (Exception e) {
+//                log.info("[flowMatchingBotDecision] Send action failed");
+//            }
+//        });
+
+//        Long startTurnTime = mapState.getStartedAtUnixTime() + (mapState.getTurn() + 1) * (gameInfo.getIntervalMillis() + gameInfo.getTurnMillis());
+//        Long currentUnixTime = Instant.now().toEpochMilli();
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
         Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 1000;
         Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn -100;
