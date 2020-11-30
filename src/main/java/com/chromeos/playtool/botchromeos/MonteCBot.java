@@ -39,7 +39,6 @@ public class MonteCBot implements IBotChromeOS {
         try {
 //            Process process = Runtime.getRuntime().exec(resourceService.getExecutableFilePath() + " " + BotUtils.buildArguments(mapModel, gameInfo));
             Process process = Runtime.getRuntime().exec("/Users/LongNH/Workspace/procon_one/cmake-build-release/procon" + " " + UtilsCustom.buildArguments(mapModel, gameInfo, millisecondForRun));
-            log.info("String output of bot latdot  {}", new String(process.getInputStream().readAllBytes()).split(" "));
             List<RequestAction> requestActionModelList = UtilsCustom.extractActionsFromOrBot(new String(process.getInputStream().readAllBytes()).split(" "), mapModel, gameInfo);
             return new RequestActionList(requestActionModelList);
         } catch (Exception e) {

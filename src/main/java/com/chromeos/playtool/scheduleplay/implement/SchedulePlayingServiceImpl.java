@@ -101,7 +101,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //            );
 
             CompletableFuture.supplyAsync(
-                    () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
+                    () -> monteCBot.botMakeDecision(mapState, gameInfo, 2000L)
             ).thenApply(actionStep -> {
                 log.info("[monteCBot] Bot lat dot is done!");
                 try {

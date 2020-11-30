@@ -10,14 +10,14 @@ import java.util.List;
 @Slf4j
 public class UtilsCustom {
 
-    public static String buildArguments(MapState mapModel, GameInfo gameInfo, Long milisecondForRun) {
+    public static String buildArguments(MapState mapModel, GameInfo gameInfo, Long milliSecondForRun) {
         StringBuilder res = new StringBuilder();
 
         // Số turn còn lại
         res.append(gameInfo.getTurns() - mapModel.getTurn()).append(" ");
 
         // Thời gian được phép chạy
-        res.append(milisecondForRun).append(" ");
+        res.append(milliSecondForRun).append(" ");
 
         // Kích thước bàn cờ
         res.append(mapModel.getWidth()).append(" ").append(mapModel.getHeight()).append(" ");
@@ -64,6 +64,8 @@ public class UtilsCustom {
     }
 
     public static List<RequestAction> extractActionsFromOrBot(String[] output, MapState mapState, GameInfo gameInfo) {
+
+        log.info("output string array: {}", output);
 
         Team myTeam = null;
         for (Team teamModel : mapState.getTeams())
