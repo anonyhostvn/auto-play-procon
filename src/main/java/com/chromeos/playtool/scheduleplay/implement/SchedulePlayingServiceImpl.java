@@ -12,13 +12,9 @@ import com.chromeos.playtool.exception.BusinessLogicException;
 import com.chromeos.playtool.hostserver.IHostServerClient;
 import com.chromeos.playtool.repositories.PlayerStagingRepository;
 import com.chromeos.playtool.scheduleplay.ISchedulePlayingService;
-import com.chromeos.playtool.service.IPlayToolService;
-import com.chromeos.playtool.service.implement.PlayToolService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,12 +69,10 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         return mapState;
     }
 
-    private void playBot(IBotChromeOS iBotChromeOS, String token) {
+    private void playBot(String token) {
         GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
-        Long t1 = System.currentTimeMillis();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
-        Long gapTimeForRequest = System.currentTimeMillis() - t1;
-
+//
 //        CompletableFuture.runAsync(() -> {
 //            RequestActionList flowMatchingBotDecision = iBotChromeOS.botMakeDecision(mapState, gameInfo);
 //            try {
@@ -93,26 +87,63 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //            }
 //        });
 
-//        Long startTurnTime = mapState.getStartedAtUnixTime() + (mapState.getTurn() + 1) * (gameInfo.getIntervalMillis() + gameInfo.getTurnMillis());
-//        Long currentUnixTime = Instant.now().toEpochMilli();
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
-        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 1000;
-        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn -1100;
+        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
         log.info(" ================ ");
 
-        CompletableFuture.runAsync(() -> {
-            log.info("Send action");
-        }, CompletableFuture.delayedExecutor(
-                remainTime,
-                TimeUnit.MILLISECONDS
-        ));
+        if (remainTime > 0) {
+//            CompletableFuture<RequestActionList> calculateStep =  CompletableFuture.supplyAsync(
+//                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+//            );
+
+            CompletableFuture.supplyAsync(
+                    () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
+            ).thenApply(actionStep -> {
+                log.info("[monteCBot] Bot lat dot is done!");
+                try {
+                    log.info("Start send action {}", actionStep);
+                    iHostServerClient.sendActionToServer(
+                            token,
+                            gameInfo.getId().toString(),
+                            actionStep
+                    );
+                    log.info("[monteCBot] Send action success for turn: {}", mapState.getTurn());
+                } catch (Exception e) {
+                    log.info("[monteCBot] Send action failed");
+                }
+                return null;
+            });
+
+//            CompletableFuture.runAsync(
+//                    () -> {
+//                        try {
+//                            RequestActionList requestActionList = calculateStep.get();
+//                            log.info("Start send action {}", requestActionList);
+//                            iHostServerClient.sendActionToServer(
+//                                    token,
+//                                    gameInfo.getId().toString(),
+//                                    requestActionList
+//                            );
+//                            log.info("[flowMatchingBotDecision] Send action success for turn: {}", mapState.getTurn());
+//                        } catch (Exception e) {
+//                            log.info("[flowMatchingBotDecision] Send action failed");
+//                        }
+//                    },
+//                    CompletableFuture.delayedExecutor(
+//                            remainTime-2000,
+//                            TimeUnit.MILLISECONDS
+//                    )
+//            );
+        }
+
         CompletableFuture<EmptyResponseData> future = new CompletableFuture<>();
         future.completeAsync(
                 () -> {
-                    playBot(iBotChromeOS, token);
+                    playBot(token);
                     return new EmptyResponseData();
                 },
                 CompletableFuture.delayedExecutor(
@@ -126,7 +157,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
     @Override
     public void startASchedulePlaying() {
         String token = playerStagingRepository.getToken();
-        playBot(flowMatchingBot, token);
+        playBot(token);
     }
 
     @Override

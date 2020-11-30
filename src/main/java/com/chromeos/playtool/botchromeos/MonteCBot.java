@@ -12,7 +12,12 @@ import java.util.List;
 public class MonteCBot implements IBotChromeOS {
 
     @Override
-    public RequestActionList botMakeDecision(MapState mapModel, GameInfo gameInfo) {
+    public RequestActionList botMakeDecision(MapState mapState, GameInfo gameInfo) {
+        return botMakeDecision(mapState, gameInfo, 10000L);
+    }
+
+    @Override
+    public RequestActionList botMakeDecision(MapState mapModel, GameInfo gameInfo, Long millisecondForRun) {
 
         for (int i = 0; i < mapModel.getWidth(); i ++)
             for (int j = 0; j < mapModel.getHeight(); j ++) {
@@ -33,7 +38,8 @@ public class MonteCBot implements IBotChromeOS {
 
         try {
 //            Process process = Runtime.getRuntime().exec(resourceService.getExecutableFilePath() + " " + BotUtils.buildArguments(mapModel, gameInfo));
-            Process process = Runtime.getRuntime().exec("/Users/LongNH/Workspace/procon_one/cmake-build-release/procon" + " " + UtilsCustom.buildArguments(mapModel, gameInfo));
+            Process process = Runtime.getRuntime().exec("/Users/LongNH/Workspace/procon_one/cmake-build-release/procon" + " " + UtilsCustom.buildArguments(mapModel, gameInfo, millisecondForRun));
+            log.info("String output of bot latdot  {}", new String(process.getInputStream().readAllBytes()).split(" "));
             List<RequestAction> requestActionModelList = UtilsCustom.extractActionsFromOrBot(new String(process.getInputStream().readAllBytes()).split(" "), mapModel, gameInfo);
             return new RequestActionList(requestActionModelList);
         } catch (Exception e) {

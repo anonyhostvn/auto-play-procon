@@ -199,4 +199,9 @@ public class FlowMatchingBot implements IBotChromeOS {
             }
         return null;
     }
+
+    @Override
+    public RequestActionList botMakeDecision(MapState mapState, GameInfo gameInfo, Long timeForRun) {
+        return botMakeDecision(mapState, gameInfo);
+    }
 }

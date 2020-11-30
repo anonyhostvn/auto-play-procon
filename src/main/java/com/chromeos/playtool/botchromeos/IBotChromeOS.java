@@ -6,4 +6,6 @@ import com.chromeos.playtool.common.model.RequestActionList;
 
 public interface IBotChromeOS {
     RequestActionList botMakeDecision(MapState mapState, GameInfo gameInfo);
+
+    RequestActionList botMakeDecision(MapState mapState, GameInfo gameInfo, Long timeForRun);
 }

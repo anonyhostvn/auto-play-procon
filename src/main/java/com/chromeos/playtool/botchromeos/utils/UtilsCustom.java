@@ -10,14 +10,14 @@ import java.util.List;
 @Slf4j
 public class UtilsCustom {
 
-    public static String buildArguments(MapState mapModel, GameInfo gameInfo) {
+    public static String buildArguments(MapState mapModel, GameInfo gameInfo, Long milisecondForRun) {
         StringBuilder res = new StringBuilder();
 
         // Số turn còn lại
         res.append(gameInfo.getTurns() - mapModel.getTurn()).append(" ");
 
         // Thời gian được phép chạy
-        res.append(gameInfo.getIntervalMillis()).append(" ");
+        res.append(milisecondForRun).append(" ");
 
         // Kích thước bàn cờ
         res.append(mapModel.getWidth()).append(" ").append(mapModel.getHeight()).append(" ");
