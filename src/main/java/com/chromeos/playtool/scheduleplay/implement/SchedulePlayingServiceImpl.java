@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +35,8 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
     private final List<CompletableFuture<EmptyResponseData>> listWaiting;
 
+    private Random randomGenerator;
+
     public SchedulePlayingServiceImpl(
             PlayerStagingRepository playerStagingRepository,
             FlowMatchingBot flowMatchingBot,
@@ -45,6 +48,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         this.monteCBot = monteCBot;
         this.iHostServerClient = iHostServerClient;
         this.listWaiting = new ArrayList<>();
+        this.randomGenerator = new Random();
     }
 
     private MapState fetchMapState(String token, String matchId) {
@@ -87,8 +91,10 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //        });
 
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
-        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 100;
-        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 200;
+        Long extraTime = 150 + randomGenerator.nextLong() % 50;
+        log.info("Extra time random: {}", extraTime);
+        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + extraTime;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
