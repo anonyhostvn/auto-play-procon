@@ -5,7 +5,10 @@ import com.chromeos.playtool.common.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -39,7 +42,10 @@ public class MonteCBot implements IBotChromeOS {
         try {
 //            Process process = Runtime.getRuntime().exec(resourceService.getExecutableFilePath() + " " + BotUtils.buildArguments(mapModel, gameInfo));
             Process process = Runtime.getRuntime().exec("/Users/LongNH/Workspace/procon_one/cmake-build-release/procon" + " " + UtilsCustom.buildArguments(mapModel, gameInfo, millisecondForRun));
-            List<RequestAction> requestActionModelList = UtilsCustom.extractActionsFromOrBot(new String(process.getInputStream().readAllBytes()).split(" "), mapModel, gameInfo);
+            InputStream inputStream = process.getInputStream();
+            String outputString = new String(inputStream.readAllBytes());
+
+            List<RequestAction> requestActionModelList = UtilsCustom.extractActionsFromOrBot(outputString.split(" "), mapModel, gameInfo);
             return new RequestActionList(requestActionModelList);
         } catch (Exception e) {
             log.error("Execute bot catch exception !");

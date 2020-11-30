@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class UtilsCustom {
@@ -33,7 +34,7 @@ public class UtilsCustom {
         // Số lượng kho báu chưa được chiếm và toạ độ
         // TODO: CODE HERE
 
-        int myTeamId = gameInfo.getTeamID();
+        long myTeamId = gameInfo.getTeamID();
         Team myTeam = null, opponentTeam = null;
 
         for (Team teamModel : mapModel.getTeams())
@@ -65,11 +66,9 @@ public class UtilsCustom {
 
     public static List<RequestAction> extractActionsFromOrBot(String[] output, MapState mapState, GameInfo gameInfo) {
 
-        log.info("output string array: {}", output);
-
         Team myTeam = null;
         for (Team teamModel : mapState.getTeams())
-            if (teamModel.getTeamID().equals(gameInfo.getTeamID())) myTeam = teamModel;
+            if (teamModel.getTeamID().equals(gameInfo.getTeamID().longValue())) myTeam = teamModel;
 
         List<RequestAction> botOrActionResponseList = new ArrayList<>();
         if (myTeam != null) {
