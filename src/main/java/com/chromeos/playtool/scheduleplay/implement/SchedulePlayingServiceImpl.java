@@ -88,7 +88,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //        });
 
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
-        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn;
+        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 10;
         Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
