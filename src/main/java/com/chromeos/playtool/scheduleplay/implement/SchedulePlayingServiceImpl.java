@@ -5,7 +5,6 @@ import com.chromeos.playtool.botchromeos.MonteCBot;
 import com.chromeos.playtool.botchromeos.IBotChromeOS;
 import com.chromeos.playtool.common.model.GameInfo;
 import com.chromeos.playtool.common.model.MapState;
-import com.chromeos.playtool.common.model.RequestActionList;
 import com.chromeos.playtool.constant.ResponseStatusMsg;
 import com.chromeos.playtool.domain.EmptyResponseData;
 import com.chromeos.playtool.exception.BusinessLogicException;
@@ -88,8 +87,8 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 //        });
 
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
-        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 10;
-        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
+        Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 100;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 200;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
@@ -106,12 +105,13 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
                 log.info("[monteCBot] Bot lat dot is done!");
                 try {
                     log.info("Start send action {}", actionStep);
+                    Long t1 = System.currentTimeMillis();
                     iHostServerClient.sendActionToServer(
                             token,
                             gameInfo.getId().toString(),
                             actionStep
                     );
-                    log.info("[monteCBot] Send action success for turn: {}", mapState.getTurn());
+                    log.info("[monteCBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
                 } catch (Exception e) {
                     log.info("[monteCBot] Send action failed");
                 }
