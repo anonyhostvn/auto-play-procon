@@ -54,9 +54,10 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
     private MapState fetchMapState(String token, String matchId) {
         MapState mapState = null;
         log.info("Start fetch mapState");
+        Long t1 = System.currentTimeMillis();
         try {
             mapState = iHostServerClient.getRecentMapState(token, matchId);
-            log.info("Recent turn get from server: {}", mapState.getTurn());
+            log.info("Recent turn get from server: {}. GET map successfully in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
         } catch (Exception e) {
             log.info(e.getMessage(), e.getCause());
         }
