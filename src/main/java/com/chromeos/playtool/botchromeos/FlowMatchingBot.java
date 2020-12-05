@@ -165,7 +165,6 @@ public class FlowMatchingBot implements IBotChromeOS {
         for (int i = 0; i < 24; i++)
             for (int j = 0; j < 24; j++)
                 gapPointMap[i][j] = -INF;
-        log.info("PROCON:TURN:" + map.getTurn());
         int source = 900, sink = 901, send = map.getTeams().get(0).getAgents().size();
         minCost = new MinCost(1000, source, sink, send);
         for (Team team : map.getTeams())

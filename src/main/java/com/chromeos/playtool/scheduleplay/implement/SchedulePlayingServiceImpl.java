@@ -35,8 +35,6 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
     private final List<CompletableFuture<EmptyResponseData>> listWaiting;
 
-    private Random randomGenerator;
-
     public SchedulePlayingServiceImpl(
             PlayerStagingRepository playerStagingRepository,
             FlowMatchingBot flowMatchingBot,
@@ -48,12 +46,11 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         this.monteCBot = monteCBot;
         this.iHostServerClient = iHostServerClient;
         this.listWaiting = new ArrayList<>();
-        this.randomGenerator = new Random();
     }
 
     private MapState fetchMapState(String token, String matchId) {
         MapState mapState = null;
-        log.info("Start fetch mapState");
+        log.info("---> Start fetch mapState <---");
         Long t1 = System.currentTimeMillis();
         try {
             mapState = iHostServerClient.getRecentMapState(token, matchId);
@@ -76,42 +73,40 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
     private void playBot(String token) {
         GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
-//
-//        CompletableFuture.runAsync(() -> {
-//            RequestActionList flowMatchingBotDecision = iBotChromeOS.botMakeDecision(mapState, gameInfo);
-//            try {
-//                iHostServerClient.sendActionToServer(
-//                        token,
-//                        gameInfo.getId().toString(),
-//                        flowMatchingBotDecision
-//                );
-//                log.info("Send action for turn: {}", mapState.getTurn());
-//            } catch (Exception e) {
-//                log.info("[flowMatchingBotDecision] Send action failed");
-//            }
-//        });
 
         Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
-        Long extraTime = 150 + randomGenerator.nextLong() % 50;
-        log.info("Extra time random: {}", extraTime);
         Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 100;
         Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
-        log.info(" ================ ");
 
         if (remainTime > 0) {
-//            CompletableFuture<RequestActionList> calculateStep =  CompletableFuture.supplyAsync(
-//                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
-//            );
+            CompletableFuture.supplyAsync(
+                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+            ).thenApply(actionStep -> {
+                log.info("[flowMatchingBot] Bot Hung is done!");
+                try {
+                    log.info("[flowMatchingBot] Start send action {}", actionStep);
+                    Long t1 = System.currentTimeMillis();
+                    iHostServerClient.sendActionToServer(
+                            token,
+                            gameInfo.getId().toString(),
+                            actionStep
+                    );
+                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+                } catch (Exception e) {
+                    log.info("[flowMatchingBot] Send action failed");
+                }
+                return null;
+            });
 
             CompletableFuture.supplyAsync(
                     () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
             ).thenApply(actionStep -> {
                 log.info("[monteCBot] Bot lat dot is done!");
                 try {
-                    log.info("Start send action {}", actionStep);
+                    log.info("[monteCBot] Start send action {}", actionStep);
                     Long t1 = System.currentTimeMillis();
                     iHostServerClient.sendActionToServer(
                             token,
@@ -122,29 +117,9 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
                 } catch (Exception e) {
                     log.info("[monteCBot] Send action failed");
                 }
+                log.info(" ================ ");
                 return null;
             });
-
-//            CompletableFuture.runAsync(
-//                    () -> {
-//                        try {
-//                            RequestActionList requestActionList = calculateStep.get();
-//                            log.info("Start send action {}", requestActionList);
-//                            iHostServerClient.sendActionToServer(
-//                                    token,
-//                                    gameInfo.getId().toString(),
-//                                    requestActionList
-//                            );
-//                            log.info("[flowMatchingBotDecision] Send action success for turn: {}", mapState.getTurn());
-//                        } catch (Exception e) {
-//                            log.info("[flowMatchingBotDecision] Send action failed");
-//                        }
-//                    },
-//                    CompletableFuture.delayedExecutor(
-//                            remainTime-2000,
-//                            TimeUnit.MILLISECONDS
-//                    )
-//            );
         }
 
         CompletableFuture<EmptyResponseData> future = new CompletableFuture<>();
