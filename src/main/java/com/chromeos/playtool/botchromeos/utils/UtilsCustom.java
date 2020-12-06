@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 public class UtilsCustom {
@@ -62,6 +61,83 @@ public class UtilsCustom {
         log.info("Params to run or bot {} ", res.toString());
 
         return res.toString();
+    }
+
+    private static Action getLastActionOfAgent(Integer agentId, List<Action> actionList) {
+        int n = actionList.size();
+        while (n -- > 0) {
+            if (actionList.get(n).getAgentID().longValue() == agentId.longValue()) return actionList.get(n);
+        }
+        return null;
+    }
+
+    public static String buildArgumentsForStdMontCBot(MapState mapModel, GameInfo gameInfo, Long milliSecondForRun) {
+        StringBuilder res = new StringBuilder();
+
+        // Số turn còn lại
+        res.append(gameInfo.getTurns() - mapModel.getTurn()).append(" ");
+
+        // Thời gian được phép chạy
+        res.append(milliSecondForRun).append(" ");
+
+        // Kích thước bàn cờ
+        res.append(mapModel.getWidth()).append(" ").append(mapModel.getHeight()).append(" ");
+
+        // Điểm của mỗi ô trên bàn đấu
+        for (List<Integer> row : mapModel.getPoints())
+            for (Integer score : row) res.append(score).append(" ");
+
+        // Số lượng kho báu chưa được chiếm và toạ độ
+        // TODO: CODE HERE
+
+        long myTeamId = gameInfo.getTeamID();
+        Team myTeam = null, opponentTeam = null;
+
+        for (Team teamModel : mapModel.getTeams())
+            if (teamModel.getTeamID() == myTeamId) myTeam = teamModel;
+            else opponentTeam = teamModel;
+
+        if (myTeam != null && opponentTeam != null) {
+            res.append(myTeam.getAgents().size()).append(" ");
+            // Số lượng agent và toạ độ các agent
+            for (Agent agentModel : myTeam.getAgents()){
+                res.append(agentModel.getX()).append(" ").append(agentModel.getY()).append(" ");
+                Action action = getLastActionOfAgent(agentModel.getAgentID(), mapModel.getActions());
+                if (action != null) {
+                    res.append(action.getDx()).append(" ").append(action.getDy()).append(" ");
+                } else {
+                    res.append(0).append(" ").append(0).append(" ");
+                }
+            }
+
+            for (Agent agentModel : opponentTeam.getAgents()) {
+                res.append(agentModel.getX()).append(" ").append(agentModel.getY()).append(" ");
+                Action action = getLastActionOfAgent(agentModel.getAgentID(), mapModel.getActions());
+                if (action != null) {
+                    res.append(action.getDx()).append(" ").append(action.getDy()).append(" ");
+                } else {
+                    res.append(0).append(" ").append(0).append(" ");
+                }
+            }
+
+        }
+
+        // Màu của mỗi ô trên bàn đấu
+        for (List<Integer> row : mapModel.getTiled())
+            for (Integer tile : row) res.append(tile).append(" ");
+
+        // Kho báu
+        res.append(mapModel.getTreasure().size()).append(" ");
+        for (Treasure treasure : mapModel.getTreasure()) {
+            res.append(treasure.getStatus()).append(" ");
+            res.append(treasure.getPoint()).append(" ");
+            res.append(treasure.getX()).append(" ");
+            res.append(treasure.getY()).append(" ");
+        }
+
+        log.info("Params to run or bot {} ", res.toString().replace(" ", "\n"));
+
+        return res.toString().replace(" ", "\n");
     }
 
     public static List<RequestAction> extractActionsFromOrBot(String[] output, MapState mapState, GameInfo gameInfo) {

@@ -3,6 +3,7 @@ package com.chromeos.playtool.scheduleplay.implement;
 import com.chromeos.playtool.botchromeos.FlowMatchingBot;
 import com.chromeos.playtool.botchromeos.MonteCBot;
 import com.chromeos.playtool.botchromeos.IBotChromeOS;
+import com.chromeos.playtool.botchromeos.StdIOMonteCBot;
 import com.chromeos.playtool.common.model.GameInfo;
 import com.chromeos.playtool.common.model.MapState;
 import com.chromeos.playtool.constant.ResponseStatusMsg;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +31,8 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
     private final IBotChromeOS monteCBot;
 
+    private final IBotChromeOS stdIOMonteCBot;
+
     private final IHostServerClient iHostServerClient;
 
     private final List<CompletableFuture<EmptyResponseData>> listWaiting;
@@ -39,6 +41,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
             PlayerStagingRepository playerStagingRepository,
             FlowMatchingBot flowMatchingBot,
             MonteCBot monteCBot,
+            StdIOMonteCBot stdIOMonteCBot,
             IHostServerClient iHostServerClient
     ) {
         this.playerStagingRepository = playerStagingRepository;
@@ -46,6 +49,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         this.monteCBot = monteCBot;
         this.iHostServerClient = iHostServerClient;
         this.listWaiting = new ArrayList<>();
+        this.stdIOMonteCBot = stdIOMonteCBot;
     }
 
     private MapState fetchMapState(String token, String matchId) {
@@ -82,42 +86,65 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         log.info("Set async action");
 
         if (remainTime > 0) {
-            CompletableFuture.supplyAsync(
-                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
-            ).thenApply(actionStep -> {
-                log.info("[flowMatchingBot] Bot Hung is done!");
-                try {
-                    log.info("[flowMatchingBot] Start send action {}", actionStep);
-                    Long t1 = System.currentTimeMillis();
-                    iHostServerClient.sendActionToServer(
-                            token,
-                            gameInfo.getId().toString(),
-                            actionStep
-                    );
-                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
-                } catch (Exception e) {
-                    log.info("[flowMatchingBot] Send action failed");
-                }
-                return null;
-            });
+            final Long timeStartBot = System.currentTimeMillis();
+//            CompletableFuture.supplyAsync(
+//                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+//            ).thenApply(actionStep -> {
+//                log.info("[flowMatchingBot] Bot Hung is done in {} ms", System.currentTimeMillis() - timeStartBot);
+//                try {
+//                    log.info("[flowMatchingBot] Start send action {}", actionStep);
+//                    Long t1 = System.currentTimeMillis();
+//                    iHostServerClient.sendActionToServer(
+//                            token,
+//                            gameInfo.getId().toString(),
+//                            actionStep
+//                    );
+//                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+//                } catch (Exception e) {
+//                    log.info("[flowMatchingBot] Send action failed");
+//                } finally {
+//                    log.info("=========");
+//                }
+//                return null;
+//            });
+
+//            CompletableFuture.supplyAsync(
+//                    () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
+//            ).thenApply(actionStep -> {
+//                log.info("[monteCBot] Bot lat dot is done in {} ms", System.currentTimeMillis() - timeStartBot);
+//                try {
+//                    log.info("[monteCBot] Start send action {}", actionStep);
+//                    Long t1 = System.currentTimeMillis();
+//                    iHostServerClient.sendActionToServer(
+//                            token,
+//                            gameInfo.getId().toString(),
+//                            actionStep
+//                    );
+//                    log.info("[monteCBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+//                } catch (Exception e) {
+//                    log.info("[monteCBot] Send action failed");
+//                }
+//                log.info(" ================ ");
+//                return null;
+//            });
 
             CompletableFuture.supplyAsync(
-                    () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
+                    () -> stdIOMonteCBot.botMakeDecision(mapState, gameInfo, remainTime)
             ).thenApply(actionStep -> {
-                log.info("[monteCBot] Bot lat dot is done!");
+                log.info("[stdIOMonteCBot] Bot lat dot is done in {} ms", System.currentTimeMillis() - timeStartBot);
                 try {
-                    log.info("[monteCBot] Start send action {}", actionStep);
+                    log.info("[stdIOMonteCBot] Start send action {}", actionStep);
                     Long t1 = System.currentTimeMillis();
                     iHostServerClient.sendActionToServer(
                             token,
                             gameInfo.getId().toString(),
                             actionStep
                     );
-                    log.info("[monteCBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+                    log.info("[stdIOMonteCBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
                 } catch (Exception e) {
-                    log.info("[monteCBot] Send action failed");
+                    log.info("[stdIOMonteCBot] Send action failed");
                 }
-                log.info(" ================ ");
+                log.info(" ===============");
                 return null;
             });
         }
