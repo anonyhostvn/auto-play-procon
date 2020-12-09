@@ -3,6 +3,7 @@ package com.chromeos.playtool.scheduleplay.implement;
 import com.chromeos.playtool.botchromeos.FlowMatchingBot;
 import com.chromeos.playtool.botchromeos.MonteCBot;
 import com.chromeos.playtool.botchromeos.IBotChromeOS;
+import com.chromeos.playtool.botchromeos.OlderFlowMatchingBot;
 import com.chromeos.playtool.common.model.GameInfo;
 import com.chromeos.playtool.common.model.MapState;
 import com.chromeos.playtool.constant.ResponseStatusMsg;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +30,8 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
     private final IBotChromeOS flowMatchingBot;
 
+    private  IBotChromeOS olderFlowMatchingBot;
+
     private final IBotChromeOS monteCBot;
 
     private final IHostServerClient iHostServerClient;
@@ -40,12 +42,14 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
             PlayerStagingRepository playerStagingRepository,
             FlowMatchingBot flowMatchingBot,
             MonteCBot monteCBot,
-            IHostServerClient iHostServerClient
+            IHostServerClient iHostServerClient,
+            OlderFlowMatchingBot olderFlowMatchingBot
     ) {
         this.playerStagingRepository = playerStagingRepository;
         this.flowMatchingBot = flowMatchingBot;
         this.monteCBot = monteCBot;
         this.iHostServerClient = iHostServerClient;
+        this.olderFlowMatchingBot = olderFlowMatchingBot;
         this.listWaiting = new ArrayList<>();
     }
 
@@ -86,20 +90,20 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
 
         if (remainTime > 0) {
 //            CompletableFuture.supplyAsync(
-//                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+//                    () -> olderFlowMatchingBot.botMakeDecision(mapState, gameInfo)
 //            ).thenApply(actionStep -> {
-//                log.info("[flowMatchingBot] Bot Hung is done!");
+//                log.info("[olderFlowMatchingBot] Bot Hung is done!");
 //                try {
-//                    log.info("[flowMatchingBot] Start send action {}", actionStep);
+//                    log.info("[olderFlowMatchingBot] Start send action {}", actionStep);
 //                    Long t1 = System.currentTimeMillis();
 //                    iHostServerClient.sendActionToServer(
 //                            token,
 //                            gameInfo.getId().toString(),
 //                            actionStep
 //                    );
-//                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+//                    log.info("[olderFlowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
 //                } catch (Exception e) {
-//                    log.info("[flowMatchingBot] Send action failed");
+//                    log.info("[olderFlowMatchingBot] Send action failed");
 //                }
 //                return null;
 //            });
