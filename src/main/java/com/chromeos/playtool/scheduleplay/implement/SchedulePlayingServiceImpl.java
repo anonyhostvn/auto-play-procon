@@ -11,6 +11,7 @@ import com.chromeos.playtool.exception.BusinessLogicException;
 import com.chromeos.playtool.hostserver.IHostServerClient;
 import com.chromeos.playtool.repositories.PlayerStagingRepository;
 import com.chromeos.playtool.scheduleplay.ISchedulePlayingService;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -74,40 +75,66 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         GameInfo gameInfo = playerStagingRepository.getCurrentGameInfo();
         MapState mapState = fetchMapState(token, gameInfo.getId().toString());
 
-        Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
+//        Long timePerTurn = gameInfo.getIntervalMillis() + gameInfo.getTurnMillis();
+        Long timePerTurn = 2000 + gameInfo.getTurnMillis();
         Long delayedTime = timePerTurn - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn + 100;
-        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 100;
+        Long remainTime = gameInfo.getTurnMillis() - (Instant.now().toEpochMilli() - mapState.getStartedAtUnixTime()) % timePerTurn - 200;
         log.info("Delayed time between next action: {}", delayedTime);
         log.info("Remain time in turn: {}", remainTime);
         log.info("Set async action");
+        Long startTime = System.currentTimeMillis();
 
         if (remainTime > 0) {
+//            CompletableFuture.supplyAsync(
+//                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+//            ).thenApply(actionStep -> {
+//                log.info("[flowMatchingBot] Bot Hung is done!");
+//                try {
+//                    log.info("[flowMatchingBot] Start send action {}", actionStep);
+//                    Long t1 = System.currentTimeMillis();
+//                    iHostServerClient.sendActionToServer(
+//                            token,
+//                            gameInfo.getId().toString(),
+//                            actionStep
+//                    );
+//                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+//                } catch (Exception e) {
+//                    log.info("[flowMatchingBot] Send action failed");
+//                }
+//                return null;
+//            });
+
+            String cloneMapState = new Gson().toJson(mapState);
+            MapState cloneMapStateObj = new Gson().fromJson(cloneMapState,MapState.class);
+            log.info("Time for clone new mapState: {} ms", System.currentTimeMillis() - startTime);
+
             CompletableFuture.supplyAsync(
-                    () -> flowMatchingBot.botMakeDecision(mapState, gameInfo)
+                    () -> monteCBot.botMakeDecision(cloneMapStateObj, gameInfo, 5000L)
             ).thenApply(actionStep -> {
-                log.info("[flowMatchingBot] Bot Hung is done!");
+                log.info("[monteCBotLow] Bot lat dot is done in {} ms !", System.currentTimeMillis() - startTime);
                 try {
-                    log.info("[flowMatchingBot] Start send action {}", actionStep);
+                    log.info("[monteCBotLow] Start send action {}", actionStep);
                     Long t1 = System.currentTimeMillis();
                     iHostServerClient.sendActionToServer(
                             token,
                             gameInfo.getId().toString(),
                             actionStep
                     );
-                    log.info("[flowMatchingBot] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+                    log.info("[monteCBotLow] Send action success for turn: {} in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
                 } catch (Exception e) {
-                    log.info("[flowMatchingBot] Send action failed");
+                    log.info("[monteCBotLow] Send action failed");
                 }
+                log.info(" ================");
                 return null;
             });
 
             CompletableFuture.supplyAsync(
                     () -> monteCBot.botMakeDecision(mapState, gameInfo, remainTime)
             ).thenApply(actionStep -> {
-                log.info("[monteCBot] Bot lat dot is done!");
+                log.info("[monteCBot] Bot lat dot is done in {} ms !", System.currentTimeMillis() - startTime);
                 try {
                     log.info("[monteCBot] Start send action {}", actionStep);
-                    Long t1 = System.currentTimeMillis();
+                    long t1 = System.currentTimeMillis();
                     iHostServerClient.sendActionToServer(
                             token,
                             gameInfo.getId().toString(),
