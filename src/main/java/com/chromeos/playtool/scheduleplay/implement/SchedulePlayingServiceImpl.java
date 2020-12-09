@@ -60,6 +60,7 @@ public class SchedulePlayingServiceImpl implements ISchedulePlayingService {
         try {
             mapState = iHostServerClient.getRecentMapState(token, matchId);
             log.info("Recent turn get from server: {}. GET map successfully in {} ms", mapState.getTurn(), System.currentTimeMillis() - t1);
+            log.info("Recent score tile of 2 team: {} ", mapState.getTeams());
         } catch (Exception e) {
             log.info(e.getMessage(), e.getCause());
         }
